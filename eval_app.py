@@ -1,36 +1,23 @@
 import streamlit as st
-import random
-import uuid
-from datetime import datetime
 import pandas as pd
 import ast
+import uuid
+from datetime import datetime
+from PIL import Image
+import random
 
-# --- Setup ---
-NUM_QUESTIONS = 10
-NUM_IMAGES = 10
+# Constants
+CSV_PATH = "your_experiment_data.csv"  # Replace with your actual CSV path
+NUM_QUESTIONS = 1  # Just one for now, showing the first experiment
 
-def load_experiment_data(csv_path):
-    # Load CSV into a DataFrame
-    df = pd.read_csv(csv_path)
-
-    # Convert the stringified list of image paths to actual lists
+# Load experiments CSV and parse image paths
+@st.cache_data
+def load_experiment_data(path):
+    df = pd.read_csv(path)
     df['candidate_paths'] = df['candidate_paths'].apply(ast.literal_eval)
-
     return df
 
-def get_images_for_experiment(df, experiment_index):
-    """
-    Returns a list of image file paths for a specific experiment.
-    """
-    return df.loc[experiment_index, 'candidate_paths']
-
-# Simulated data
-def load_images():
-    # Replace with actual image URLs or file paths
-    return [f"https://via.placeholder.com/150?text=Image+{i+1}" for i in range(NUM_IMAGES)]
-
-def get_description(correct_index):
-    return f"This is a description for image {correct_index + 1}"
+df = load_experiment_data(CSV_PATH)
 
 # Initialize session state
 if "user_id" not in st.session_state:
@@ -39,30 +26,32 @@ if "user_id" not in st.session_state:
     st.session_state.current_question = 0
     st.session_state.start_time = datetime.utcnow()
 
-# images = load_images()
-
 # --- Survey Flow ---
 st.title("🧠 Image Description Matching Task")
 
 if st.session_state.current_question < NUM_QUESTIONS:
     q_idx = st.session_state.current_question
-    correct_idx = random.randint(0, NUM_IMAGES - 1)
-    description = get_description(correct_idx)
+    row = df.iloc[q_idx]
+
+    description = row["description"]
+    images = row["candidate_paths"]
+    gold_index = row["gold_index"]
 
     st.markdown(f"**Question {q_idx + 1} of {NUM_QUESTIONS}**")
     st.markdown(f"**Description:** {description}")
 
-    # Show images
-    choice = st.radio("Which image matches the description?", [f"Image {i+1}" for i in range(NUM_IMAGES)])
+    # Show image choices
+    st.image(images, width=150, caption=[f"Image {i+1}" for i in range(len(images))])
+    choice = st.radio("Which image matches the description?", [f"Image {i+1}" for i in range(len(images))])
     selected_idx = int(choice.split()[-1]) - 1
 
     if st.button("Submit"):
         st.session_state.responses.append({
             "user_id": st.session_state.user_id,
             "question": q_idx + 1,
-            "correct_index": correct_idx,
+            "correct_index": gold_index,
             "selected_index": selected_idx,
-            "correct": selected_idx == correct_idx,
+            "correct": selected_idx == gold_index,
             "timestamp": str(datetime.utcnow())
         })
         st.session_state.current_question += 1
@@ -75,6 +64,5 @@ else:
     st.markdown(f"**Your score:** {correct_answers} / {NUM_QUESTIONS}")
 
     # Download results
-    import pandas as pd
-    df = pd.DataFrame(st.session_state.responses)
-    st.download_button("📥 Download your responses", df.to_csv(index=False), "responses.csv")
+    df_out = pd.DataFrame(st.session_state.responses)
+    st.download_button("📥 Download your responses", df_out.to_csv(index=False), "responses.csv")
