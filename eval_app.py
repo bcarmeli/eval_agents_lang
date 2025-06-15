@@ -68,9 +68,6 @@ if "loaded_experiments" not in st.session_state:
     for file in experiment_files:
         name = file.replace(".csv", "")
         label = f"✅ {name}" if name in st.session_state.completed_experiments else name
-        # experiment_labels.append(label)
-        # experiment_names.append(name)
-        #all_experiments.update({name: init_experiment(file)})
         all_experiments[name] = init_experiment(file)
     st.session_state.loaded_experiments = all_experiments
 
@@ -125,41 +122,15 @@ if st.session_state.active_experiment_name != selected_experiment:
     st.session_state.responses = experiment["responses"]
     st.session_state.done = experiment["done"]
     st.session_state.shuffled_trials = experiment["shuffled_trials"]
-    # st.session_state.user_id = str(uuid.uuid4())
-
-# Constants
-# CSV_PATH = "your_experiment_data.csv"  # Replace with your actual CSV path
-# CSV_PATH = "test.csv"
 
 
 # --- App Setup ---
 st.title("🧠 Image Description Matching Task")
 
-# experiments = load_experiment_data(CSV_PATH)
-
 # --- Session State Init ---
 if "user_id" not in st.session_state:
     st.session_state.user_id = str(uuid.uuid4())
     st.session_state.start_time = str(datetime.now())
-    # st.session_state.responses = []
-    # st.session_state.current_question = 0
-    # st.session_state.done = False
-
-# Local session vars for shuffling
-# if "shuffled_trials" not in st.session_state:
-#     trials = []
-#     for _, row in experiments.iterrows():
-#         images = row["candidate_paths"]
-#         gold_img = images[int(row["gold_index"]) - 1]  # 1-based to 0-based
-#         shuffled = images.copy()
-#         random.shuffle(shuffled)
-#         gold_shuffled_idx = shuffled.index(gold_img)
-#         trials.append({
-#             "description": row["description"],
-#             "shuffled_paths": shuffled,
-#             "correct_index": gold_shuffled_idx
-#         })
-#     st.session_state.shuffled_trials = trials
 
 # --- Early Exit ---
 if st.button("🚪 Quit and Save Results"):
@@ -170,10 +141,6 @@ if st.button("🚪 Quit and Save Results"):
 # --- Main Loop ---
 if st.session_state.current_question < len(st.session_state.shuffled_trials):
     trial = st.session_state.shuffled_trials[st.session_state.current_question]
-    # row = data.iloc[st.session_state.current_question]
-    # description = row["description"]
-    # correct_index = int(row["gold_index"]) - 1
-    # image_paths = parse_image_paths(row["candidate_paths"])
     description = trial["description"]
     image_paths = trial["shuffled_paths"]
     correct_index = trial["correct_index"]
@@ -189,15 +156,7 @@ if st.session_state.current_question < len(st.session_state.shuffled_trials):
             selected_index = i
         col.image(img_path, use_container_width=True, caption=f"Image {i+1}")
 
-    # selected_index = image_select(
-    #     label="Select the image that matches the description:",
-    #     images=image_paths,
-    #     captions=[f"Image {i+1}" for i in range(len(image_paths))],
-    #     use_container_width=True
-    # )
-    
-    # if st.button("Submit") and selected is not None:
-    #     selected_index = shuffled_images.index(selected)
+
     if selected_index is not None:
         st.session_state.responses.append({
             "user_id": st.session_state.user_id,
