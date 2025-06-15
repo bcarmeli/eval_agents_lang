@@ -6,7 +6,6 @@ import uuid
 from datetime import datetime
 from PIL import Image
 import random
-from streamlit_image_select import image_select
 
 st.set_page_config(page_title="Referential Game Evaluation", layout="wide")
 # Get all experiment files
