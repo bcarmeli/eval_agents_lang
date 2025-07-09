@@ -217,9 +217,10 @@ elif st.session_state.done or st.session_state.current_question >= len(st.sessio
     all_experiments_names = list(st.session_state.loaded_experiments.keys())
     remaining = [1 for e in list(st.session_state.loaded_experiments.values()) if not e["done"]]
     if remaining:
+        st.warning("Please download your responses before moving to the next step.")
         st.markdown("**🧪 Next step:** Select another experiment from the sidebar on the left ⬅️ to continue.")
     else:
-        st.warning("Please do not forget to download your last experiment results using the above button.")
+        st.warning("Please do not forget to download your last responses using the above button.")
         st.markdown("Please collect all three files and send them to me (boazc@il.ibm.com)")
         st.success(f"🎉 Thank you for completing the evaluation of all studies!")
     
