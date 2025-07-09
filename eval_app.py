@@ -30,6 +30,7 @@ experiment_files = sorted([f for f in os.listdir(EXPERIMENT_FOLDER) if f.endswit
 @st.cache_data
 def load_experiment_data(csv_path):
     df = pd.read_csv(csv_path)
+    df['candidate_paths'] = [path.replace("/Users/boazc/workarea/phd/country-flags/", "") for path in df['candidate_paths']]
     df["candidate_paths"] = df["candidate_paths"].apply(ast.literal_eval)
     return df
 
@@ -111,8 +112,9 @@ st.sidebar.markdown(
     """
     1. There are three experiments.
     2. There are 10 questions in each.
-    3. For each turn, read the description carefully.
+    3. For each turn, read the description.
     4. Select the image that best matches it.
+    **Note - if you have no clue, simply guess one.**.
     5. Once done with the experiment, download your results.
     **Note - results are saved locally. Please make sure you know to find them**.
     6. Move to the next experiment using the radio button.
