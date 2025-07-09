@@ -6,8 +6,22 @@ import uuid
 from datetime import datetime
 from PIL import Image
 import random
+import io
+import smtplib
+from email.message import EmailMessage
+import urllib.parse
 
 st.set_page_config(page_title="Referential Game Evaluation", layout="wide")
+
+# Change these:
+email = "boaz.carmeli@gmail.com"
+subject = "Evaluation Results"
+body = "Hi,\n\nPlease find attached the evaluation results.\n\nBest,\n[Your App Name]"
+
+# Encode for mailto
+mailto_link = f"mailto:{email}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
+
+
 # Get all experiment files
 EXPERIMENT_FOLDER = "experiments"
 experiment_files = sorted([f for f in os.listdir(EXPERIMENT_FOLDER) if f.endswith(".csv")])
@@ -25,7 +39,6 @@ def parse_image_paths(candidate_paths_str):
     except Exception as e:
         st.error(f"Error parsing image paths: {e}")
         return []
-
 
 def shuffled_exp_trials(experiment):
     trials = []
@@ -52,6 +65,18 @@ def init_experiment(csv_file_path):
     exp_info["done"] = False
     return exp_info
 
+def send_email_with_results(to_email, csv_data):
+    msg = EmailMessage()
+    msg["Subject"] = "Study Results"
+    msg["From"] = to_email
+    msg["To"] = to_email
+    msg.set_content("Attached are the study results from the app.")
+
+    msg.add_attachment(csv_data, filename="study_results.csv", subtype="csv", maintype="text")
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(to_email, APP_PASSWORD)
+        smtp.send_message(msg)
 
 # Session state for tracking completed experiments
 if "completed_experiments" not in st.session_state:
@@ -84,14 +109,15 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### ℹ️ Instructions")
 st.sidebar.markdown(
     """
-    1. There are multiple experiments.
-    2. There are multiple turns in each
+    1. There are three experiments.
+    2. There are 10 questions in each.
     3. For each turn, read the description carefully.
     4. Select the image that best matches it.
-    5. Once done, move to the next experiment using the radio button.
-    
-
+    5. Once done with the experiment, download your results.
+    **Note - results are saved locally. Please make sure you know to find them**.
+    6. Move to the next experiment using the radio button.
     **Note - you may need to click the radio button twice.**
+    7. Collect the three results files and e-mail them to me (boazc@il.ibm.com)
     """
 )
 if "active_experiment_name" not in st.session_state:
@@ -191,8 +217,53 @@ elif st.session_state.done or st.session_state.current_question >= len(st.sessio
     if remaining:
         st.markdown("**🧪 Next step:** Select another experiment from the sidebar on the left ⬅️ to continue.")
     else:
+        st.warning("Please do not forget to download your last experiment results using the above button.")
+        st.markdown("Please collect all three files and send them to me (boazc@il.ibm.com)")
         st.success(f"🎉 Thank you for completing the evaluation of all studies!")
     
+        # results_df = pd.DataFrame(st.session_state.responses)
+        # csv_buffer = io.StringIO()
+        # results_df.to_csv(csv_buffer, index=False)
+        # csv_bytes = csv_buffer.getvalue().encode("utf-8")
+        # # Provide download first
+        # st.download_button(
+        #     label="📥 Download Results",
+        #     data=csv_bytes,  # Assuming you have your CSV data as bytes
+        #     file_name="study_results.csv",
+        #     mime="text/csv"
+        # )
+
+        # # Mailto button
+        # st.markdown(f"""
+        # <a href="{mailto_link}">
+        #     <button style="margin-top: 10px;">📧 Open Mail App</button>
+        # </a>
+        # """, unsafe_allow_html=True)
+
+        # # Convert session responses to CSV
+        # if "responses" in st.session_state and st.session_state.responses:
+        #     results_df = pd.DataFrame(st.session_state.responses)
+        #     csv_buffer = io.StringIO()
+        #     results_df.to_csv(csv_buffer, index=False)
+        #     csv_bytes = csv_buffer.getvalue().encode("utf-8")
+
+        #     # Display download and email button
+        #     if st.button("📤 Download & Email Results"):
+        #         # Email the results
+        #         try:
+        #             send_email_with_results(YOUR_EMAIL, csv_bytes)
+        #             st.success("✅ Results emailed successfully!")
+        #         except Exception as e:
+        #             st.error(f"❌ Failed to send email: {e}")
+
+        #         # Trigger file download using st.download_button workaround
+        #         st.download_button(
+        #             label="Click here to download manually if needed",
+        #             data=csv_bytes,
+        #             file_name="study_results.csv",
+        #             mime="text/csv"
+        #         )
+
     
 else:
     st.warning("Unexpected state.")
