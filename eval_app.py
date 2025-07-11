@@ -118,7 +118,6 @@ st.sidebar.markdown(
     2. There are 10 questions in each.
     3. For each turn, read the description.
     4. Select the image that best matches it.
-    **Note - if you have no clue, simply guess one.**.
     5. Once done with the experiment, download your results.
     **Note - results are saved locally. Please make sure you know to find them**.
     6. Move to the next experiment using the buttons on the left sidebar.
