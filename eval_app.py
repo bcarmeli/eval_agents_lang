@@ -43,18 +43,22 @@ def parse_image_paths(candidate_paths_str):
 
 def shuffled_exp_trials(experiment):
     trials = []
-    for _, row in experiment.iterrows():
+    for turn_num, row in experiment.iterrows():
         images = row["candidate_paths"]
         gold_img = images[int(row["gold_index"]) - 1]  # 1-based to 0-based
         shuffled = images.copy()
         random.shuffle(shuffled)
         gold_shuffled_idx = shuffled.index(gold_img)
         trials.append({
+            "turn_num": turn_num,
+            "exp_num": row["exp_num"],
+            "target": row["target"],
             "description": row["description"],
             "shuffled_paths": shuffled,
             "correct_index": gold_shuffled_idx
         })
-    return trials
+    random.shuffle(trials)
+    return trials[:10]
 
 def init_experiment(csv_file_path):
     exp_info = {}
@@ -117,7 +121,7 @@ st.sidebar.markdown(
     **Note - if you have no clue, simply guess one.**.
     5. Once done with the experiment, download your results.
     **Note - results are saved locally. Please make sure you know to find them**.
-    6. Move to the next experiment using the radio button.
+    6. Move to the next experiment using the buttons on the left sidebar.
     **Note - you may need to click the radio button twice.**
     7. Collect the three results files and e-mail them to me (boazc@il.ibm.com)
     """
@@ -159,15 +163,18 @@ if "user_id" not in st.session_state:
     st.session_state.user_id = str(uuid.uuid4())
     st.session_state.start_time = str(datetime.now())
 
-# --- Early Exit ---
-if st.button("🚪 Quit and Save Results"):
-    df = pd.DataFrame(st.session_state.responses)
-    st.download_button("📥 Download your responses", df.to_csv(index=False), "responses.csv")
-    st.stop()
+# # --- Early Exit ---
+# if st.button("🚪 Quit and Save Results"):
+#     df = pd.DataFrame(st.session_state.responses)
+#     st.download_button("📥 Download your responses", df.to_csv(index=False), "responses.csv")
+#     st.stop()
 
 # --- Main Loop ---
 if st.session_state.current_question < len(st.session_state.shuffled_trials):
     trial = st.session_state.shuffled_trials[st.session_state.current_question]
+    turn_num = trial["turn_num"]
+    exp_num = trial["exp_num"]
+    target =trial["target"]
     description = trial["description"]
     image_paths = trial["shuffled_paths"]
     correct_index = trial["correct_index"]
@@ -188,6 +195,9 @@ if st.session_state.current_question < len(st.session_state.shuffled_trials):
         st.session_state.responses.append({
             "user_id": st.session_state.user_id,
             "question": st.session_state.current_question + 1,
+            "turn_num": turn_num,
+            "exp_num": exp_num,
+            "target": target,
             "description": description,
             "correct_index": correct_index,
             "selected_index": selected_index,
